@@ -97,3 +97,30 @@ def upload_txt_to_drive(service, folder_id, file_name, text_content):
     ).execute()
 
     print(f"Uploaded: {file_name} (Drive ID: {uploaded_file.get('id')})")
+
+
+# ── 4. Move a File to Another Folder ────────────────────────────────────────
+
+def move_file_to_folder(service, file_id, new_folder_id, old_folder_id):
+    """
+    Move a file from one Drive folder to another.
+    Google Drive doesn't have a true 'move' — instead we add the new
+    parent folder and remove the old one.
+
+    Parameters:
+        service       : the Drive service object
+        file_id       : the ID of the file to move
+        new_folder_id : the folder to move it INTO
+        old_folder_id : the folder to move it OUT OF
+    """
+
+    updated_file = service.files().update(
+        fileId=file_id,
+        addParents=new_folder_id,
+        removeParents=old_folder_id,
+        fields="id, parents",
+        supportsAllDrives=True   # needed since processed_videos may live in a Shared Drive context
+    ).execute()
+
+    print(f"Moved file {file_id} to processed_videos folder.")
+    return updated_file

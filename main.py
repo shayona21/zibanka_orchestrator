@@ -6,7 +6,7 @@ import os
 import json
 import requests
 from flask import Flask, jsonify
-from drive_helper import get_drive_service, list_videos_in_folder, upload_txt_to_drive
+from drive_helper import get_drive_service, list_videos_in_folder, upload_txt_to_drive, move_file_to_folder
 
 app = Flask(__name__)
 
@@ -21,6 +21,7 @@ TRANSCRIPTION_APP_URL = "http://35.225.88.95:5000/"
 # A simple file that tracks which video IDs we already processed
 PROCESSED_IDS_FILE = "processed_ids.json"
 
+PROCESSED_FOLDER_ID = "1SEFrdTYyKnCZx--Hf152inLV_GIGsYHX"
 
 # ── Helper: Load Processed IDs ───────────────────────────────────────────────
 
@@ -229,13 +230,21 @@ def run_orchestrator():
         # Step 9: If we got a transcription, upload it to the output Drive folder
         if transcription_text:
             output_file_name = video_name.rsplit(".", 1)[0] + "_transcript.txt"
-            # e.g. "interview.mp4" → "interview_transcript.txt"
+            # e.g. "interview.mp4" becomes "interview_transcript.txt"
 
             upload_txt_to_drive(
                 service,
                 OUTPUT_FOLDER_ID,
                 output_file_name,
                 transcription_text
+            )
+
+            # Step 9b: Move the video out of the input folder so it's never picked up again
+            move_file_to_folder(
+                service,
+                file_id=video_id,
+                new_folder_id=PROCESSED_FOLDER_ID,
+                old_folder_id=INPUT_FOLDER_ID
             )
 
             # Step 10: Mark this video as processed so we don't run it again
