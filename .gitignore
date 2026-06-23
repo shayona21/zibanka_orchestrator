@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+.env
+processed_ids.json
+hot-folder-transcription-c5a0d168400d.json
