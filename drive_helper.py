@@ -9,19 +9,38 @@ import os
 
 def get_drive_service():
     """
-    Log in to Google Drive using the service account key file.
-    Returns a 'service' object we use to talk to Drive.
+    Log in to Google Drive using the service account key.
+    Works both locally (reads from a file on disk) and on Cloud Run
+    (reads from the mounted secret at /secrets).
     """
-
-    # Path to your downloaded JSON key file
-    KEY_FILE = "hot-folder-transcription-c5a0d168400d.json"
 
     # This tells Google what permissions we need (read + write Drive files)
     SCOPES = ["https://www.googleapis.com/auth/drive"]
 
-    # Load the credentials from the key file
+    # Cloud Run mounts the secret here (matches mount path "/secrets"
+    # and file name "drive-service-account-key" from the Volumes setup)
+    CLOUD_RUN_KEY_PATH = "/secrets/drive-service-account-key"
+
+    # Local testing uses the actual JSON file sitting in your project folder
+    LOCAL_KEY_FILE = "hot-folder-transcription-c5a0d168400d.json"
+
+    # Debug line — shows in Cloud Run logs exactly what's inside /secrets
+    if os.path.exists("/secrets"):
+        print(f"DEBUG: /secrets exists. Contents: {os.listdir('/secrets')}")
+    else:
+        print("DEBUG: /secrets directory does not exist at all.")
+
+    # Pick whichever path actually exists on this machine
+    if os.path.exists(CLOUD_RUN_KEY_PATH):
+        key_path = CLOUD_RUN_KEY_PATH
+        print(f"DEBUG: Using Cloud Run secret path: {key_path}")
+    else:
+        key_path = LOCAL_KEY_FILE
+        print(f"DEBUG: Using local key file: {key_path}")
+
+    # Load the credentials from whichever key_path was selected
     credentials = service_account.Credentials.from_service_account_file(
-        KEY_FILE,
+        key_path,
         scopes=SCOPES
     )
 
